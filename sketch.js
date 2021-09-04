@@ -2,6 +2,7 @@ var score=0;
 var death=0;
 var lives = 3;
 var gameState='play';
+var Shield;
 
 function preload() {
     jumpingAnimation = loadAnimation(
@@ -45,6 +46,10 @@ function preload() {
     fruit3 = loadImage('images/fruit3.png');
     fruit4 = loadImage('images/fruit4.png');
     fireBall = loadAnimation('images/fireball.png', 'images/fireball2.png', 'images/fireball3.png');
+    gameOver=loadImage('images/gameover.png');
+    reset=loadImage('images/reset (1).png');
+    shield=loadImage('images/shield.png');
+    
 }
 
 
@@ -58,6 +63,12 @@ function setup() {
     zombieGroup = new Group();
     swordGroup = new Group();
     fireGroup = new Group();
+    gameover=createSprite(width/2,height/2-100);
+    gameover.addImage(gameOver);
+    Reset=createSprite(width/2,height/2);
+    Reset.addImage(reset);
+    Reset.scale=0.2;
+    
 }
 
 
@@ -65,6 +76,8 @@ function draw() {
     background(gameBackground);
 console.log(gameState);
 if(gameState==='play'){
+    gameover.visible=false;
+    Reset.visible=false;
     if (keyDown('SPACE')) {
         ninja.velocityY = -10;
         ninja.changeAnimation('jumping', jumpingAnimation);
@@ -77,17 +90,27 @@ if(gameState==='play'){
         zombie.remove();
         sword.remove();
         death=death+1;
+        ninja.velocityX=0;
     }
     function zombieHit1(zombie){
         zombie.remove();
        lives=lives-1;
+       ninja.velocityX=0;
         //death=death+1;
     }
     if(keyDown("RIGHT_ARROW")){
         ninja.x=ninja.x+3;
+        
+        console.log(ninja.mirrorX());
+        if(ninja.mirrorX()===-1){
+            ninja.mirrorX(ninja.mirrorX()*-1)
+        }
     }
     if(keyDown("LEFT_ARROW")){
         ninja.x=ninja.x-3;
+        if(ninja.mirrorX()===1){
+            ninja.mirrorX(ninja.mirrorX()*-1)
+        }
     }
     if(ninja.isTouching(zombieGroup)&&lives>0){
         //lives=lives-1;
@@ -107,11 +130,27 @@ if(gameState==='play'){
         //fruitGroup.shift();
         fruit.remove();
         score=score+1;
+        ninja.velocityX=0;
     }
     function fireHit(fire){
         fire.remove();
         lives=lives-1;
+        ninja.velocityX=0;
     }
+    if(keyDown('w')&&score>=3){
+        spawnShield();
+       score=score-3;
+       Shield.x=ninja.x;
+       Shield.y=ninja.y;
+        if(fireGroup.isTouching(Shield)){
+            fireGroup.destroyEach();
+        }
+    }
+    if(Shield){
+        Shield.x=ninja.x;
+       Shield.y=ninja.y;
+    }
+    
     swordGroup.bounce(zombieGroup,zombieHit);
     ninja.bounceOff(fruitGroup,fruitHit);
     zombieGroup.bounce(ninja,zombieHit1);
@@ -127,6 +166,20 @@ if(gameState==='play'){
     zombieGroup.setVelocityXEach(0);
     fruitGroup.setVelocityXEach(0);
     fruitGroup.setLifetimeEach(-1);
+    gameover.visible=true;
+    Reset.visible=true;
+    ninja.velocityX=0;
+    if(mousePressedOver(Reset)){
+        gameState='play';
+        score=0
+        death=0
+        lives=3
+        fruitGroup.destroyEach();
+        zombieGroup.destroyEach();
+        swordGroup.destroyEach();
+        fireGroup.destroyEach();
+        
+    }
 }
     ninja.collide(edges);
     drawSprites();
@@ -242,4 +295,11 @@ function spawnFire(){
         fire.scale=0.1;
         fireGroup.add(fire);
     }
+}
+
+function spawnShield(){
+    Shield=createSprite(ninja.x,ninja.y);
+    Shield.addImage(shield);
+    Shield.lifetime=100;
+    Shield.scale=0.3;
 }
